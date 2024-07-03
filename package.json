@@ -25,8 +25,12 @@
     "@nestjs/core": "^10.3.9",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.3.1",
+    "chinese-lunar": "^0.1.4",
+    "chinese-zodiac": "^1.0.1",
     "cross-env": "^7.0.3",
+    "dayjs": "^1.11.11",
     "dotenv": "^16.4.5",
+    "lunar-javascript": "^1.6.12",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
+import { BindYourFortuneModule } from './bind-your-fortune/bind-your-fortune.module';
 
 @Module({
-  imports: [],
+  imports: [BindYourFortuneModule],
 })
 export class AppModule {}
