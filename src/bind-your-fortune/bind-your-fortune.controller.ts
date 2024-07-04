@@ -11,11 +11,9 @@ export class BindYourFortuneController {
   @Post()
 async  create(@Body() createBindYourFortuneDto : CreateBindYourFortuneDto ) {
     const bazi = await this.bindYourFortuneService.getBazi(createBindYourFortuneDto);
-    const analysis = this.bindYourFortuneService.analyzeElements(bazi);
 
     return {
-      bazi,
-      analysis,
+      bazi
     };
   }
 

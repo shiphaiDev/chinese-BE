@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { CreateBindYourFortuneDto } from './dto/create-bind-your-fortune.dto';
-import { UpdateBindYourFortuneDto } from './dto/update-bind-your-fortune.dto';
 import * as dayjs from 'dayjs';
-import { Lunar, LunarUtil } from 'lunar-javascript';
+import { Lunar, Solar, EightChar, I18n, LunarUtil } from 'lunar-javascript';
 const getCZ = require('chinese-zodiac');
-
+// I18n.setLanguage('en');
 const heavenlyStems = [
   'Jia',
   'Yi',
@@ -100,186 +99,165 @@ const hiddenStems = {
   Hai: ['Ren', 'Jia'],
 };
 
-
-
 const zodiacSigns = {
-  '鼠': {
+  鼠: {
     thai: 'ปีชวด (หนู)',
     english: 'Year of the Rat',
-    chinese: '鼠 (shŭ / สู่)'
+    chinese: '鼠 (shŭ / สู่)',
   },
-  '牛': {
+  牛: {
     thai: 'ปีฉลู (วัว)',
     english: 'Year of the Ox / Year of the Cow',
-    chinese: '牛 (niú / หนิว)'
+    chinese: '牛 (niú / หนิว)',
   },
-  '虎': {
+  虎: {
     thai: 'ปีขาล (เสือ)',
     english: 'Year of the Tiger',
-    chinese: '虎 (hǔ / หู่)'
+    chinese: '虎 (hǔ / หู่)',
   },
-  '兔': {
+  兔: {
     thai: 'ปีเถาะ (กระต่าย)',
     english: 'Year of the Rabbit',
-    chinese: '兔 (tù / ทู่)'
+    chinese: '兔 (tù / ทู่)',
   },
-  '龙': {
+  龙: {
     thai: 'ปีมะโรง (งูใหญ่ / มังกร)',
     english: 'Year of the Dragon',
-    chinese: '龙 (lóng / หลง)'
+    chinese: '龙 (lóng / หลง)',
   },
-  '蛇': {
+  蛇: {
     thai: 'ปีมะเส็ง (งูเล็ก)',
     english: 'Year of the Snake',
-    chinese: '蛇 (shé / เสอ)'
+    chinese: '蛇 (shé / เสอ)',
   },
-  '马': {
+  马: {
     thai: 'ปีมะเมีย (ม้า)',
     english: 'Year of the Horse',
-    chinese: '马 (mǎ / หม่า)'
+    chinese: '马 (mǎ / หม่า)',
   },
-  '羊': {
+  羊: {
     thai: 'ปีมะแม (แพะ)',
     english: 'Year of the Goat',
-    chinese: '羊 (yáng / หย่าง)'
+    chinese: '羊 (yáng / หย่าง)',
   },
-  '猴': {
+  猴: {
     thai: 'ปีวอก (ลิง)',
     english: 'Year of the Monkey',
-    chinese: '猴 (hóu / โหว)'
+    chinese: '猴 (hóu / โหว)',
   },
-  '鸡': {
+  鸡: {
     thai: 'ปีระกา (ไก่)',
     english: 'Year of the Rooster',
-    chinese: '鸡 (jī / จี)'
+    chinese: '鸡 (jī / จี)',
   },
-  '狗': {
+  狗: {
     thai: 'ปีจอ (สุนัข)',
     english: 'Year of the Dog',
-    chinese: '狗 (gǒu / โก่ว)'
+    chinese: '狗 (gǒu / โก่ว)',
   },
-  '猪': {
+  猪: {
     thai: 'ปีกุน (หมู)',
     english: 'Year of the Pig',
-    chinese: '猪 (zhū / จู)'
-  }
+    chinese: '猪 (zhū / จู)',
+  },
+};
+
+const tenGods = {
+  Jia: ['BiJian', 'JieCai', 'ShiShen', 'ShangGuan', 'ZhengCai', 'PianCai', 'ZhengGuan', 'QiSha', 'ZhengYin', 'PianYin'],
+  Yi: ['JieCai', 'BiJian', 'ShangGuan', 'ShiShen', 'PianCai', 'ZhengCai', 'QiSha', 'ZhengGuan', 'PianYin', 'ZhengYin'],
+  Bing: ['ShiShen', 'ShangGuan', 'BiJian', 'JieCai', 'ZhengCai', 'PianCai', 'QiSha', 'ZhengGuan', 'PianYin', 'ZhengYin'],
+  Ding: ['ShangGuan', 'ShiShen', 'JieCai', 'BiJian', 'PianCai', 'ZhengCai', 'ZhengGuan', 'QiSha', 'ZhengYin', 'PianYin'],
+  Wu: ['ZhengCai', 'PianCai', 'QiSha', 'ZhengGuan', 'BiJian', 'JieCai', 'ShiShen', 'ShangGuan', 'ZhengYin', 'PianYin'],
+  Ji: ['PianCai', 'ZhengCai', 'ZhengGuan', 'QiSha', 'JieCai', 'BiJian', 'ShangGuan', 'ShiShen', 'PianYin', 'ZhengYin'],
+  Geng: ['ZhengGuan', 'QiSha', 'ZhengYin', 'PianYin', 'ShiShen', 'ShangGuan', 'BiJian', 'JieCai', 'ZhengCai', 'PianCai'],
+  Xin: ['QiSha', 'ZhengGuan', 'PianYin', 'ZhengYin', 'ShangGuan', 'ShiShen', 'JieCai', 'BiJian', 'PianCai', 'ZhengCai'],
+  Ren: ['ZhengYin', 'PianYin', 'ShiShen', 'ShangGuan', 'BiJian', 'JieCai', 'ZhengCai', 'PianCai', 'ZhengGuan', 'QiSha'],
+  Gui: ['PianYin', 'ZhengYin', 'ShangGuan', 'ShiShen', 'JieCai', 'BiJian', 'PianCai', 'ZhengCai', 'QiSha', 'ZhengGuan']
 };
 
 @Injectable()
 export class BindYourFortuneService {
-  // getLunarDate(date: Date): string {
-  //   const lunar = Lunar.solarToLunar(date);
-  //   return lunar
-  // }
-
-  // getZodiacSign(year: number): any {
-  //   return getCZ(year);
-  // }
-
-  //   getHoroscope(date: Date): string {
-  //     const year = date.getFullYear();
-  //     console.log(year)
-  //     const zodiacSign = this.getZodiacSign(year);
-  //     console.log(zodiacSign)
-  //     const horoscopes = {
-  //       'Rat': 'คุณจะมีโอกาสใหม่ๆ ในปีนี้',
-  //       'Ox': 'ปีนี้จะเป็นปีที่ดีสำหรับการลงทุน',
-  //       'Tiger': 'ระวังปัญหาสุขภาพ',
-  //       'Rabbit': 'ความสัมพันธ์จะดีขึ้น',
-  //       'Dragon': 'ปีนี้จะเป็นปีแห่งความสำเร็จ',
-  //       'Snake': 'มีโชคลาภเรื่องการเงิน',
-  //       'Horse': 'การงานจะก้าวหน้า',
-  //       'Goat': 'จะได้รับการสนับสนุนจากผู้ใหญ่',
-  //       'Monkey': 'ระวังเรื่องความขัดแย้ง',
-  //       'Rooster': 'มีโอกาสในการเดินทาง',
-  //       'Dog': 'จะพบกับความมั่นคง',
-  //       'Pig': 'ปีนี้จะเป็นปีที่มีความสุข',
-  //     };
-  // console.log(horoscopes[zodiacs[(year - 4) % 12]])
-  //     return horoscopes[zodiacs[(year - 4) % 12]] || 'ไม่มีคำทำนายสำหรับราศีนี้';
-  //   }
-
   getBazi(createBindYourFortuneDto: CreateBindYourFortuneDto): any {
-    // ผสานวันที่และเวลาเป็นหนึ่งเดียว
-    const fullDateTime = dayjs(
-      `${createBindYourFortuneDto.dateStr} ${createBindYourFortuneDto.timeStr}`,
-      'YYYY-MM-DD HH:mm',
-      true,
-    ).toDate();
+    const solar = Solar.fromYmdHms(
+      Number(createBindYourFortuneDto.dateStr.substring(0, 4)),
+      Number(createBindYourFortuneDto.dateStr.substring(5, 7)),
+      Number(createBindYourFortuneDto.dateStr.substring(8, 10)),
+      Number(createBindYourFortuneDto.timeStr.substring(0, 2)),
+      Number(createBindYourFortuneDto.timeStr.substring(3, 5)),
+      0
+    );
+    const lunar = Lunar.fromSolar(solar);
+    const eightChar = EightChar.fromLunar(lunar);
 
-    // Convert to Lunar date
-    const lunarDate = Lunar.fromDate(fullDateTime);
-    console.log(lunarDate);
-    const year = lunarDate.getYear();
-    const month = lunarDate.getMonth();
-    const day = lunarDate.getDay();
-    const hour = fullDateTime.getHours();
-
-    const yearStemIndex = lunarDate.getYearGanIndex();
-    const yearBranchIndex = lunarDate.getYearZhiIndex();
+    const yearStemIndex = lunar.getYearGanIndex();
+    const yearBranchIndex = lunar.getYearZhiIndex();
     const yearStem = heavenlyStems[yearStemIndex];
     const yearBranch = earthlyBranches[yearBranchIndex];
+    const yearStemEightChar = eightChar.getYearGan();
+    const yearBranchEightChar = eightChar.getYearZhi();
     const yearElement = heavenlyelements[yearStemIndex];
     const yearYinYang = heavenlyyinYang[yearStemIndex];
     const yearBranchYinYang = earthlyyinYang[yearBranchIndex];
     const yearBranchElement = earthlyelements[yearBranchIndex];
 
-    const monthStemIndex = lunarDate.getMonthGanIndex();
-    const monthBranchIndex = lunarDate.getMonthZhiIndex();
+    const monthStemIndex = lunar.getMonthGanIndex();
+    const monthBranchIndex = lunar.getMonthZhiIndex();
     const monthStem = heavenlyStems[monthStemIndex];
     const monthBranch = earthlyBranches[monthBranchIndex];
+    const monthStemEightChar = eightChar.getMonthGan();
+    const monthBranchEightChar = eightChar.getMonthZhi();
     const monthElement = heavenlyelements[monthStemIndex];
     const monthYinYang = heavenlyyinYang[monthStemIndex];
     const monthBranchYinYang = earthlyyinYang[monthBranchIndex];
     const monthBranchElement = earthlyelements[monthBranchIndex];
 
-    const dayStemIndex = lunarDate.getDayGanIndex();
-    const dayBranchIndex = lunarDate.getDayZhiIndex();
+    const dayStemIndex = lunar.getDayGanIndex();
+    const dayBranchIndex = lunar.getDayZhiIndex();
     const dayStem = heavenlyStems[dayStemIndex];
     const dayBranch = earthlyBranches[dayBranchIndex];
+    const dayStemEightChar = eightChar.getDayGan();
+    const dayBranchEightChar = eightChar.getDayZhi();
     const dayElement = heavenlyelements[dayStemIndex];
     const dayYinYang = heavenlyyinYang[dayStemIndex];
     const dayBranchYinYang = earthlyyinYang[dayBranchIndex];
     const dayBranchElement = earthlyelements[dayBranchIndex];
 
-    const hourStemIndex = lunarDate.getTimeGanIndex();
-    const hourBranchIndex = lunarDate.getTimeZhiIndex();
+    const hourStemIndex = lunar.getTimeGanIndex();
+    const hourBranchIndex = lunar.getTimeZhiIndex();
     const hourStem = heavenlyStems[hourStemIndex];
     const hourBranch = earthlyBranches[hourBranchIndex];
+    const hourStemEightChar = eightChar.getTimeGan();
+    const hourBranchEightChar = eightChar.getTimeZhi();
     const hourElement = heavenlyelements[hourStemIndex];
     const hourYinYang = heavenlyyinYang[hourStemIndex];
     const hourBranchYinYang = earthlyyinYang[hourBranchIndex];
     const hourBranchElement = earthlyelements[hourBranchIndex];
 
-    const yearZodiac = zodiacSigns[lunarDate.getYearShengXiao()];
-    const monthZodiac = zodiacSigns[lunarDate.getMonthShengXiao()];
-    const dayZodiac = zodiacSigns[lunarDate.getDayShengXiao()];
-    const hourZodiac = zodiacSigns[lunarDate.getTimeShengXiao()]; // ใช้ฟังก์ชัน getAnimal
-    // const yearZodiac = getCZ(yearBranchIndex);
-    // const monthZodiac = getCZ(monthBranchIndex);
-    // const dayZodiac = getCZ(dayBranchIndex);
-    // const hourZodiac = getCZ(hourBranchIndex); // ใช้ฟังก์ชัน getAnimal
-    console.log(yearZodiac)
-    console.log(monthZodiac)
-    console.log(dayZodiac)
-    console.log(hourZodiac)
-    
+    const yearZodiac = zodiacSigns[lunar.getYearShengXiao()];
+    const monthZodiac = zodiacSigns[lunar.getMonthShengXiao()];
+    const dayZodiac = zodiacSigns[lunar.getDayShengXiao()];
+    const hourZodiac = zodiacSigns[lunar.getTimeShengXiao()];
+    // Calculate Life Stem ChangSheng
+    const lifeStemChangShengHour = eightChar.getTimeDiShi();
+    const lifeStemChangShengDay = eightChar.getDayDiShi();
+    const lifeStemChangShengMonth = eightChar.getMonthDiShi();
+    const lifeStemChangShengYear = eightChar.getYearDiShi();
 
-    // คำนวณ Life Stem และ ChangSheng สำหรับชม., วัน, เดือน, ปี
-    const changShengHour = this.calculateChangSheng(hourStemIndex);
-    const changShengDay = this.calculateChangSheng(dayStemIndex);
-    const changShengMonth = this.calculateChangSheng(monthStemIndex);
-    const changShengYear = this.calculateChangSheng(yearStemIndex);
-
-    const pillarchangshengHour = this.calculatePillarChangSheng(hourStemIndex);
-    const pillarchangshengDay = this.calculatePillarChangSheng(dayStemIndex);
-    const pillarchangshengMonth = this.calculatePillarChangSheng(monthStemIndex);
-    const pillarchangshengYear = this.calculatePillarChangSheng(yearStemIndex);
-
-    return {
+    const tenGodsHour = this.calculateTenGods(dayStem, hourStem);
+    const tenGodsDay = this.calculateTenGods(dayStem, dayStem);
+    const tenGodsMonth = this.calculateTenGods(dayStem, monthStem);
+    const tenGodsYear = this.calculateTenGods(dayStem, yearStem);
+    // // Calculate Pillar ChangSheng
+    // const pillarChangShengHour = this.calculatePillarChangSheng(hourStemEightChar, hourBranch);
+    // const pillarChangShengDay = this.calculatePillarChangSheng(dayStemEightChar, dayBranch);
+    // const pillarChangShengMonth = this.calculatePillarChangSheng(monthStemEightChar, monthBranch);
+    // const pillarChangShengYear = this.calculatePillarChangSheng(yearStemEightChar, yearBranch);
+    const baziData = {
       year: {
         stem: yearStem,
+        yearStemEightChar: yearStemEightChar,
         branch: yearBranch,
+        yearBranchEightChar: yearBranchEightChar,
         heavenlyelement: yearElement,
         heavenlyyinYang: yearYinYang,
         branchYinYang: yearBranchYinYang,
@@ -289,7 +267,9 @@ export class BindYourFortuneService {
       },
       month: {
         stem: monthStem,
+        monthStemEightChar: monthStemEightChar,
         branch: monthBranch,
+        monthBranchEightChar: monthBranchEightChar,
         heavenlyelement: monthElement,
         heavenlyyinYang: monthYinYang,
         branchYinYang: monthBranchYinYang,
@@ -299,7 +279,9 @@ export class BindYourFortuneService {
       },
       day: {
         stem: dayStem,
+        dayStemEightChar: dayStemEightChar,
         branch: dayBranch,
+        dayBranchEightChar: dayBranchEightChar,
         heavenlyelement: dayElement,
         heavenlyyinYang: dayYinYang,
         branchYinYang: dayBranchYinYang,
@@ -309,7 +291,9 @@ export class BindYourFortuneService {
       },
       hour: {
         stem: hourStem,
+        hourStemEightChar: hourStemEightChar,
         branch: hourBranch,
+        hourBranchEightChar: hourBranchEightChar,
         heavenlyelement: hourElement,
         heavenlyyinYang: hourYinYang,
         branchYinYang: hourBranchYinYang,
@@ -318,53 +302,43 @@ export class BindYourFortuneService {
         zodiac: hourZodiac,
       },
       changSheng: {
-        year: changShengYear,
-        month: changShengMonth,
-        day: changShengDay,
-        hour: changShengHour,
+        year: lifeStemChangShengYear,
+        month: lifeStemChangShengMonth,
+        day: lifeStemChangShengDay,
+        hour: lifeStemChangShengHour,
       },
-      pillarchangsheng: {
-        year: pillarchangshengYear,
-        month: pillarchangshengMonth,
-        day: pillarchangshengDay,
-        hour: pillarchangshengHour,
-      },
+      // pillarchangsheng: {
+      //   year: pillarChangShengYear,
+      //   month: pillarChangShengMonth,
+      //   day: pillarChangShengDay,
+      //   hour: pillarChangShengHour,
+      // },
     };
+    const analysis = this.analyzeElements(baziData);
+    return {
+      baziData,
+      analysis,
+      lifeStem: `${dayStemEightChar} ${dayYinYang} ${dayElement}`,
+      favorableElements: this.getFavorableElements(dayStem, analysis),
+      unfavorableElements: this.getUnfavorableElements(dayStem, analysis),
+    }
   }
 
-  calculateChangSheng(stemIndex: number): string {
-    // สมมติว่ามีการคำนวณ ChangSheng สำหรับ Stem ที่กำหนด
-    const changShengMap = {
-      1: 'GuanDai',
-      2: 'GuanDai',
-      3: 'Jue',
-      4: 'Jue',
-      5: 'LinGuan',
-      6: 'LinGuan',
-      7: 'DiWang',
-      8: 'DiWang',
-      9: 'Mu',
-      10: 'Mu',
-    };
-    return changShengMap[stemIndex] || 'Unknown';
-  }
-
-  calculatePillarChangSheng(stemIndex: number): string {
-    // สมมติว่ามีการคำนวณ Pillar ChangSheng สำหรับ Stem ที่กำหนด
-    const pillarChangShengMap = {
-      1: 'Yang',
-      2: 'Yang',
-      3: 'Jue',
-      4: 'Jue',
-      5: 'Bing',
-      6: 'Bing',
-      7: 'Si',
-      8: 'Si',
-      9: 'Sheng',
-      10: 'Sheng',
-    };
-    return pillarChangShengMap[stemIndex] || 'Unknown';
-  }
+  // calculatePillarChangSheng(stem: string, branch: string): string {
+  //   const offset = LunarUtil.CHANG_SHENG_OFFSET[stem];
+  //   if (offset === undefined) {
+  //     throw new Error(`Invalid stem: ${stem}`);
+  //   }
+  //   const branchIndex = earthlyBranches.indexOf(branch);
+  //   if (branchIndex === -1) {
+  //     throw new Error(`Invalid branch: ${branch}`);
+  //   }
+  //   let index = (offset + branchIndex) % 12;
+  //   if (index < 0) {
+  //     index += 12;
+  //   }
+  //   return LunarUtil.CHANG_SHENG[index];
+  // }
 
   analyzeElements(bazi: any): any {
     const heavenlyelementCount = {
@@ -429,26 +403,46 @@ export class BindYourFortuneService {
       },
     };
   }
+  getFavorableElements(dayStem: string, analysis: any): string[] {
+    const favorableElements = [];
+    if (dayStem === 'Jia' || dayStem === 'Yi') {
+      favorableElements.push('Water', 'Wood');
+    } else if (dayStem === 'Bing' || dayStem === 'Ding') {
+      favorableElements.push('Wood', 'Fire');
+    } else if (dayStem === 'Wu' || dayStem === 'Ji') {
+      favorableElements.push('Fire', 'Earth');
+    } else if (dayStem === 'Geng' || dayStem === 'Xin') {
+      favorableElements.push('Earth', 'Metal');
+    } else if (dayStem === 'Ren' || dayStem === 'Gui') {
+      favorableElements.push('Metal', 'Water');
+    }
 
-  // async predictBazi(dateStr: string, timeStr: string, years: number): Promise<any[]> {
-  //   const results = [];
-  //   const initialDate = dayjs(dateStr, 'YYYY-MM-DD', true);
+    return favorableElements;
+  }
 
-  //   if (!initialDate.isValid()) {
-  //     throw new Error('Invalid Date');
-  //   }
+  getUnfavorableElements(dayStem: string, analysis: any): string[] {
+    const unfavorableElements = [];
+    if (dayStem === 'Jia' || dayStem === 'Yi') {
+      unfavorableElements.push('Fire', 'Earth', 'Metal');
+    } else if (dayStem === 'Bing' || dayStem === 'Ding') {
+      unfavorableElements.push('Earth', 'Metal', 'Water');
+    } else if (dayStem === 'Wu' || dayStem === 'Ji') {
+      unfavorableElements.push('Metal', 'Water', 'Wood');
+    } else if (dayStem === 'Geng' || dayStem === 'Xin') {
+      unfavorableElements.push('Water', 'Wood', 'Fire');
+    } else if (dayStem === 'Ren' || dayStem === 'Gui') {
+      unfavorableElements.push('Wood', 'Fire', 'Earth');
+    }
 
-  //   for (let i = -years; i <= years; i++) {
-  //     const newDate = initialDate.add(i, 'year').format('YYYY-MM-DD');
-  //     const bazi = this.getBazi(newDate, timeStr);
-  //     const analysis = this.analyzeElements(bazi);
-  //     results.push({
-  //       date: newDate,
-  //       bazi,
-  //       analysis,
-  //     });
-  //   }
+    return unfavorableElements;
+  }
 
-  //   return results;
-  // }
+  calculateTenGods(dayStem: string, stem: string): string {
+    const stemIndex = heavenlyStems.indexOf(stem);
+    if (stemIndex === -1) {
+      throw new Error(`Invalid stem: ${stem}`);
+    }
+
+    return tenGods[dayStem][stemIndex];
+  }
 }
