@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { CreateBindYourFortuneDto } from './dto/create-bind-your-fortune.dto';
 import * as dayjs from 'dayjs';
-import { Lunar, I18n } from 'lunar-javascript';
+import { Lunar, I18n, EightChar, Solar } from 'lunar-javascript';
 I18n.setLanguage('en');
 @Injectable()
 export class BindYourFortuneService {
   getBazi(createBindYourFortuneDto: CreateBindYourFortuneDto): any {
+
     // const solar = Solar.fromYmdHms(
     //   Number(createBindYourFortuneDto.dateStr.substring(0, 4)),
     //   Number(createBindYourFortuneDto.dateStr.substring(5, 7)),
@@ -14,33 +15,176 @@ export class BindYourFortuneService {
     //   Number(createBindYourFortuneDto.timeStr.substring(3, 5)),
     //   0
     // );
+    // const lunar = Lunar.fromSolar(solar);
+    // const eightChar = EightChar.fromLunar(lunar);
+
     const fullDateTime = dayjs(createBindYourFortuneDto.dateStr + ' ' + createBindYourFortuneDto.timeStr, 'YYYY-MM-DD HH:mm', true).toDate();
+
     const lunar = Lunar.fromDate(fullDateTime);
     const eightChar = lunar.getEightChar();
+
+    // ปี 
+    const indexYearGen = lunar.getYearGanIndex(); // สวรรค์
+    const indexYearZhi = lunar.getYearZhiIndex(); // โลก
+    // เดือน 
+    const indexMonthGen = lunar.getMonthGanIndex(); // สวรรค์
+    const indexMonthZhi = lunar.getMonthZhiIndex(); // โลก
+    // วัน 
+    const indexDayGen = lunar.getDayGanIndex(); // สวรรค์
+    const indexDayZhi = lunar.getDayZhiIndex(); // โลก
+    // เวลา 
+    const indexTimeGen = lunar.getTimeGanIndex(); // สวรรค์
+    const indexTimeZhi = lunar.getTimeZhiIndex(); // โลก
+
+    //ธาตุุทั้ง 5
+    const elementYear = this.elements(indexYearGen,indexYearZhi)
+    const elementMonth = this.elements(indexMonthGen,indexMonthZhi)
+    const elementDay = this.elements(indexDayGen,indexDayZhi)
+    const elementTime = this.elements(indexTimeGen,indexTimeZhi)
+    //สิบเทพ
+    const tengodGan = lunar.getBaZiShiShenGan()
+
     const data  = {
       year : {
-        Xun : eightChar.getYearXun(),
-        WuXing: eightChar.getYearWuXing(),
-        amnimal: eightChar.getYearDiShi(),
+        gen : {
+          indexYearGen : indexYearGen,
+          Gan : eightChar.getYearGan(),
+          YinYangGen: this.YinYang(indexYearGen),
+          element : elementYear.gen,
+          tengod : tengodGan[0]
+        },
+        zhi : {
+          indexYearZhi : indexYearZhi,
+          Zhi : eightChar.getYearZhi(),
+          YinYangZhi: this.YinYang(indexYearZhi),
+          element : elementYear.zhi,
+          amnimal: lunar.getYearShengXiao(),
+          tengod : eightChar.getYearShiShenZhi()
+        },
+        elements : eightChar.getYearWuXing(),
+        changsheng : {
+          Life : eightChar.getYearDiShi(),
+        }
       },
       month: {
-        Xun : eightChar.getMonthXun(),
-        WuXing: eightChar.getMonthWuXing(),
-        amnimal: eightChar.getMonthDiShi(),
+        gen : {
+          indexMonthGen: indexMonthGen,
+          Gan : eightChar.getMonthGan(),
+          YinYangGen: this.YinYang(indexMonthGen),
+          element : elementMonth.gen,
+          tengod : tengodGan[1]
+        },
+        zhi : {
+          indexMonthZhi : indexMonthZhi,
+          Zhi : eightChar.getMonthZhi(),
+          YinYangZhi: this.YinYang(indexMonthZhi),
+          element : elementMonth.zhi,
+          amnimal: lunar.getMonthShengXiao(),
+          tengod : tengodGan[2]
+        },
+        elements : eightChar.getMonthWuXing(),
+        changsheng : {
+          Life : eightChar.getMonthDiShi(),
+        }
       }, 
       day: {
-        Xun : eightChar.getDayXun(),
-        WuXing: eightChar.getDayWuXing(),
-        amnimal: eightChar.getDayDiShi(),
+        gen : {
+          indexDayGen : indexDayGen,
+          Gan : eightChar.getDayGan(),
+          YinYangGen: this.YinYang(indexDayGen),
+          element : elementDay.gen,
+          tengod : tengodGan[2]
+        },
+        zhi : {
+          indexDayZhi : indexDayZhi,
+          Zhi : eightChar.getDayZhi(),
+          YinYangZhi: this.YinYang(indexDayZhi),
+          element : elementDay.zhi,
+          amnimal: lunar.getDayShengXiao(),
+          tengod : eightChar.getDayShiShenZhi()
+        },
+        elements : eightChar.getDayWuXing(),
+        changsheng : {
+          Life : eightChar.getDayDiShi(),
+        }
       },
       time: {
-        Xun : eightChar.getTimeXun(),
-        WuXing: eightChar.getTimeWuXing(),
-        amnimal: eightChar.getTimeDiShi(),
-      } 
+        gen : {
+          indexTimeGen : indexTimeGen,
+          Gan : eightChar.getTimeGan(),
+          YinYangGen: this.YinYang(indexTimeGen),
+          element : elementTime.gen,
+          tengod : tengodGan[3]
+        },
+        zhi : {
+          indexTimeZhi : indexTimeZhi,
+          Zhi : eightChar.getTimeZhi(),
+          YinYangZhi: this.YinYang(indexTimeZhi),
+          element : elementTime.zhi,
+          amnimal: lunar.getTimeShengXiao(),
+          tengod : eightChar.getTimeShiShenZhi()
+        },
+        elements : eightChar.getTimeWuXing(),
+        changsheng : {
+          Life : eightChar.getTimeDiShi(),
+        }
+      },
       
     }
     console.log(data)
+    return data
+  }
+
+  private YinYang(indexs : string){
+      const yinYang = [
+      'Yang',
+      'Yin',
+      'Yang',
+      'Yin',
+      'Yang',
+      'Yin',
+      'Yang',
+      'Yin',
+      'Yang',
+      'Yin',
+    ];
+    return yinYang[indexs];
+  }
+
+  private elements (indexGen? : string, indexZhi? : string) {
+    const genelements = [
+      'Wood',
+      'Wood',
+      'Fire',
+      'Fire',
+      'Earth',
+      'Earth',
+      'Metal',
+      'Metal',
+      'Water',
+      'Water',
+    ];
+    const zhielements = [
+      'Water',
+      'Earth',
+      'Wood',
+      'Wood',
+      'Earth',
+      'Fire',
+      'Fire',
+      'Earth',
+      'Metal',
+      'Metal',
+      'Earth',
+      'Water',
+    ];
+    const gen = genelements[indexGen];
+    const zhi = zhielements[indexZhi];
+    
+    const data = {
+      gen: gen,
+      zhi: zhi,
+    }
     return data
   }
 }
