@@ -132,6 +132,8 @@ export class BindYourFortuneService {
       
     }
     console.log(data)
+    console.log(indexTimeZhi)
+    console.log(indexDayZhi)
     return data
   }
 
@@ -147,8 +149,16 @@ export class BindYourFortuneService {
       'Yin',
       'Yang',
       'Yin',
+      'Yang',
+      'Yin',
     ];
-    return yinYang[indexs];
+
+    const yinYangThai = {
+      'Yang' : ['阳','Yang','ใหญ่'],
+      'Yin' : ['阴','Yin','เล็ก']
+    }
+    return yinYangThai[yinYang[indexs]]
+    // return yinYang[indexs];
   }
 
   private elements (indexGen? : string, indexZhi? : string) {
@@ -178,13 +188,23 @@ export class BindYourFortuneService {
       'Earth',
       'Water',
     ];
-    const gen = genelements[indexGen];
-    const zhi = zhielements[indexZhi];
-    
+
+    const elementThai = {
+      //ไทย จีน อังกฤษ
+      'Wood' : ['ไม้','木','Wood'],
+      'Fire' : ['ไฟ','火','Fire'],
+      'Earth' : ['ดิน','土','Earth'],
+      'Metal' : ['โลหะ','金','Metal'],
+      'Water' : ['น้ำ','水','Water'],   
+    }
+    const gen = elementThai[genelements[indexGen]];
+    const zhi = elementThai[zhielements[indexZhi]];
     const data = {
       gen: gen,
       zhi: zhi,
     }
     return data
   }
+
+
 }
