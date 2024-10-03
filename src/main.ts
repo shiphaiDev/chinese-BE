@@ -1,9 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as dotenv from 'dotenv';
+import * as express from 'express';
+import { ExpressAdapter } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
+  const server = express();
+  server.set('trust proxy', true); // สำหรับการใช้งาน Proxy
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
+
 
   const config = new DocumentBuilder()
   .setTitle('Mo-Project')

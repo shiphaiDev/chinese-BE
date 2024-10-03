@@ -12,3 +12,42 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+model Lineuid {
+  id    Int     @id @default(autoincrement())
+  line_uid String  @unique
+  user  User?
+
+  @@map("tbl_lineuid")
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  firstname     String
+  lastname      String
+  year          String
+  mount         String
+  day           String
+  hrs           String
+  location      String
+  sex           Boolean
+  lineId        Int     @unique
+  
+  lineuid       Lineuid @relation(fields: [lineId], references: [id])
+
+  @@map("tbl_user")
+
+}
+
+model Log {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  method        String
+  url           String
+  statusCode    Int
+  contentLength String
+  userAgent     String
+  ip            String
+  responseTime  Int
+  createdAt     DateTime  @default(now())
+ @@map("tbl_log")
+}

@@ -2,8 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { BindYourFortuneService } from './bind-your-fortune.service';
 import { CreateBindYourFortuneDto } from './dto/create-bind-your-fortune.dto';
 import { UpdateBindYourFortuneDto } from './dto/update-bind-your-fortune.dto';
-import { ApiConsumes } from '@nestjs/swagger';
-
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+@ApiTags('bind-your-fortune')
 @Controller('bind-your-fortune')
 export class BindYourFortuneController {
   constructor(private readonly bindYourFortuneService: BindYourFortuneService) {}
