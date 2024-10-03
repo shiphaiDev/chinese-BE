@@ -40,6 +40,10 @@ export class UserService {
         lineuid: true,
       },
     });
+    if(data){
+      const token = await this.authService.genToken(data.lineuid.line_uid)
+      return token
+    }
   }
 
   findAll() {
