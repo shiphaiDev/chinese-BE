@@ -1,1 +1,3 @@
-export class CreateAuthDto {}
+export class CreateAuthDto {
+    line_uid : string
+}
