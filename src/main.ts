@@ -13,6 +13,7 @@ async function bootstrap() {
 
 
   const config = new DocumentBuilder()
+  .addBearerAuth()
   .setTitle('Mo-Project')
   .setDescription('The Mo API description')
   .setVersion('1.0')

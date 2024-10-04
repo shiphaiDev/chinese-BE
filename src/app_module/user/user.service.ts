@@ -17,48 +17,56 @@ export class UserService {
     if (checkUser) {
       throw new HttpException(
         'พบข้อมูลอยู่ในระบบอยู่แล้ว',
-        HttpStatus.ACCEPTED,
+        HttpStatus.CONFLICT,
       );
     }
-    const data = await this.prisma.user.create({
-      data: {
-        firstname: createUserDto.firstname,
-        lastname: createUserDto.lastname,
-        year: createUserDto.year,
-        mount: createUserDto.mount,
-        day: createUserDto.day,
-        hrs: createUserDto.hrs,
-        location: createUserDto.location,
-        sex: createUserDto.sex,
-        lineuid: {
-          create: {
-            line_uid: createUserDto.line_uid,
+    try {
+      // Create new user in the database
+      const newUser = await this.prisma.user.create({
+        data: {
+          firstname: createUserDto.firstname,
+          lastname: createUserDto.lastname,
+          year: createUserDto.year,
+          mount: createUserDto.mount,
+          day: createUserDto.day,
+          hrs: createUserDto.hrs,
+          location: createUserDto.location,
+          sex: createUserDto.sex,
+          lineuid: {
+            create: {
+              line_uid: createUserDto.line_uid,
+            },
           },
         },
-      },
-      include: {
-        lineuid: true,
-      },
-    });
-    if(data){
-      const token = await this.authService.genToken(data.lineuid.line_uid)
-      return token
+        include: {
+          lineuid: true,
+        },
+      });
+
+      // Generate token if user creation is successful
+      const token = await this.authService.genToken(newUser.lineuid.line_uid);
+      return { token, user: newUser };
+    } catch (error) {
+      throw new HttpException('เกิดข้อผิดพลาด ไม่สามารถลงทะเบียนได้', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-
-  findAll() {
-    return `This action returns all user`;
+ async getUser(id: number) {
+  const data = await this.prisma.user.findUnique({
+    where: {
+      id: id,
+    },
+    select: {
+      firstname: true,
+      lastname: true,
+      year: true,
+      mount: true,
+      day: true,
+      hrs: true,
+      location: true,
+      sex: true,
+    }
+  })
+    return data ;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
 }

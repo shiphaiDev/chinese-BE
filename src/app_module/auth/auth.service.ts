@@ -11,39 +11,69 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
-  async chackUser(lineUid: LineUid) {
-    const checkUid = await this.checkLineUid(lineUid.line_uid);
-    if (checkUid) {
-      const token = await this.genToken(lineUid.line_uid)
-      return token
-    }
-    throw new HttpException('ไม่พบผู้ใช้',HttpStatus.NOT_FOUND)
 
-    
+  async login(lineUid: LineUid) {
+    try {
+      const checkUid = await this.checkLineUid(lineUid.line_uid);
+      if (!checkUid) {
+       return {
+        isPaired : false
+       }
+      }
+      const token = await this.genToken(lineUid.line_uid);
+      return {
+        token,
+        isPaired : true
+      }
+    } catch (error) {
+      this.handleException(error);
+    }
   }
 
   async checkLineUid(Uid: string) {
-    const checkData = await this.prisma.lineuid.findUnique({
-      where: {
-        line_uid: Uid,
-      },
-    });
-    return checkData ? true : false;
+    try {
+      const checkData = await this.prisma.lineuid.findUnique({
+        where: {
+          line_uid: Uid,
+        },
+      });
+      return checkData ? true : false;
+    } catch (error) {
+      this.handleException(error);
+    }
   }
 
-  async genToken(line_uid) {
-    const payload = {
-      sub: line_uid,
-    };
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME,
-    });
+  async genToken(line_uid: string) {
+    try {
+      const dataUser = await this.prisma.lineuid.findUnique({
+        where: {
+          line_uid: line_uid,
+        },
+        select: {
+          line_uid: true,
+          user:  {
+            select: {
+              id: true,
+            }
+          }
+        }
+      })
+      const payload = {
+        sub: dataUser.user.id,
+        line_uid: dataUser.line_uid
+      };
+      const refreshToken = this.jwtService.sign(payload, {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME,
+      });
 
-    return {
-      access_token: this.jwtService.sign(payload),
-      refreshToken: refreshToken,
-    };
+      return {
+        access_token: this.jwtService.sign(payload),
+        refresh_token: refreshToken,
+      };
+    } catch (error) {
+      this.handleException(error);
+    }
   }
 
   async refreshToken(refreshTokenDto: RefreshTokenDto) {
@@ -56,28 +86,28 @@ export class AuthService {
         secret: process.env.JWT_REFRESH_SECRET,
       });
 
-      // สร้าง Access Token ใหม่จากข้อมูลของ Refresh Token
-      const newAccessToken = this.jwtService.sign(
-        {
-          sub: payload.sub,
-        }
-      );
-      const refreshToken = this.jwtService.sign(
-        {
-          sub: payload.sub,
-        },
-        {
-          secret: process.env.JWT_REFRESH_SECRET,
-          expiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME,
-        },
-      );
+      const newAccessToken = this.jwtService.sign({
+        sub: payload.sub,
+      });
+      const newRefreshToken = this.jwtService.sign({
+        sub: payload.sub,
+      }, {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME,
+      });
       return {
         access_token: newAccessToken,
-        refresh_token: refreshToken,
+        refresh_token: newRefreshToken,
       };
-    } catch (e) {
-      throw new UnauthorizedException();
+    } catch (error) {
+      this.handleException(error);
     }
   }
 
+  private handleException(error: any) {
+    if (error instanceof HttpException) {
+      throw error;
+    }
+    throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 }
